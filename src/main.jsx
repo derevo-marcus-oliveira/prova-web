@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import axios from "axios"
 
 // Pages
 import './index.css'
@@ -8,7 +9,41 @@ import './index.css'
 const context = createContext([]);
 
 function Home() {
-  const [lista] = useContext(context);
+  
+  const [lista, setLista] = useContext(context);
+
+  async function Excluir(email){
+    debugger
+    await axios.delete("http://localhost:4003/Excluir", {
+      data: {
+        "email": email
+      }
+    })
+      .then((response) => {
+        debugger
+        console.log("Sucesso", response)
+        Buscar();                      
+      })
+      .catch((error) => {
+        debugger
+        console.log("Erro", error)
+      })
+  }
+
+  async function Buscar(email){
+    debugger
+    await axios.get("http://localhost:4003/Buscar")
+      .then((response) => {
+        debugger
+        console.log("Sucesso", response) 
+        setLista(response.data);                     
+      })
+      .catch((error) => {
+        debugger
+        console.log("Erro", error)
+      })
+  }
+
   return (
     <>
       <div>
@@ -21,7 +56,7 @@ function Home() {
         <ul>
           {lista.map((item, id) => (
             <li key={id}>
-              {item.nome}
+              <p>{item.id} - {item.email} - {item.name} - <span style={{cursor: 'pointer'}} onClick={() => Excluir(item.email)}>X</span></p>
             </li>
           ))}
         </ul>
@@ -34,10 +69,30 @@ function Service() {
 
   const [lista, setLista] = useContext(context);
 
-  var click = (nome) => {
+  var click = (name, email) => {
 
-    const obj = { nome: nome !== "" ? nome : "Vazio" };
-    setLista([...lista, obj])
+    const obj = {
+      "email": email !== "" ? email : "Vazio",
+      "name": name !== "" ? name : "Vazio"
+    };
+    debugger
+    const fectData = async () => {
+
+      await axios.post("http://localhost:4003/Adicionar", {
+          email,
+          name
+      })
+        .then((response) => {
+          debugger
+          console.log("Sucesso", response)
+          setLista([...lista, response.data])
+        })
+        .catch((error) => {
+          debugger
+          console.log("Erro", error)
+        })
+    }
+    fectData();
   }
 
   return (
@@ -45,11 +100,18 @@ function Service() {
       <div>
         <h1>Service</h1>
       </div>
-      
+
       <div>
-        <label htmlFor="nome">Nome - </label>
-        <input type="text" id='nome' />
-        <button onClick={() => click(document.getElementById('nome').value)}>
+        <div>
+          <label htmlFor="email">Email - </label>
+          <input type="email" id='email' style={{height: "30px", width: "300px"}}/>
+        </div>
+        <div>
+
+          <label htmlFor="nome">Nome - </label>
+          <input type="text" id='nome' style={{height: "30px", width: "300px"}}/>
+        </div>
+        <button onClick={() => click(document.getElementById('nome').value, document.getElementById('email').value)} style={{fontSize: "0.8em"}}>
           Add
         </button>
       </div>
@@ -66,6 +128,24 @@ function Service() {
 const Router = () => {
 
   const [lista, setLista] = useState([]);
+
+  useEffect(() => {
+
+    const fectData = async () => {
+
+      await axios.get("http://localhost:4003/Buscar")
+        .then((response) => {
+          debugger
+          console.log("Sucesso", response)
+          setLista(response.data);
+        })
+        .catch((error) => {
+          debugger
+          console.log("Erro", error)
+        })
+    }
+    fectData();
+  }, [])
 
   return (
     <context.Provider value={[lista, setLista]}>
